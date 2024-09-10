@@ -21,16 +21,16 @@ export default function ControlJoystick() {
     timerRef.current = setInterval(async () => {
       switch (direction) {
         case 'FORWARD':
-          await sendMoonrakerGcode(GCodeTravel({ y: 20 }, speed))
+          await sendRPC(GCodeTravel({ y: 20 }, speed))
           break
         case 'RIGHT':
-          await sendMoonrakerGcode(GCodeTravel({ x: 20 }, speed))
+          await sendRPC(GCodeTravel({ x: 20 }, speed))
           break
         case 'LEFT':
-          await sendMoonrakerGcode(GCodeTravel({ x: -20 }, speed))
+          await sendRPC(GCodeTravel({ x: -20 }, speed))
           break
         case 'BACKWARD':
-          await sendMoonrakerGcode(GCodeTravel({ y: -20 }, speed))
+          await sendRPC(GCodeTravel({ y: -20 }, speed))
           break
         default:
           break
@@ -39,8 +39,8 @@ export default function ControlJoystick() {
   }, [direction])
   useEffect(() => {
     async function init() {
-      await sendMoonrakerGcode(GCodeSetRelative())
-      await sendMoonrakerGcode(MCodeSetAccel(accel))
+      await sendRPC(GCodeSetRelative())
+      await sendRPC(MCodeSetAccel(accel))
     }
     init().then()
   }, [])
@@ -54,17 +54,36 @@ export default function ControlJoystick() {
   )
 }
 
-async function sendMoonrakerGcode(path: string) {
+export interface RPCRequest {
+  method: string
+  params?: { [key: string]: any }
+  id: number
+  jsonrpc: string
+}
+
+export interface RPCResponse {
+  result: { [key: string]: any } | null
+  error: { [key: string]: any } | null
+  id: number
+  jsonrpc: string
+}
+
+async function sendRPC(req: RPCRequest): Promise<RPCResponse | null> {
   try {
-    const data = await fetch(`http://localhost:7125${path}`, {
+    const data = await fetch(`http://localhost:7125/server/jsonrpc`, {
       method: 'POST',
+      body: JSON.stringify(req),
+      headers: {
+        'Content-Type': 'application/json',
+      },
     })
     const json = await data.json()
     if (json) {
       console.log(json)
-      return json
+      return json as RPCResponse
     }
   } catch (e) {
-    console.error(e)
+    console.log(e)
   }
+  return null
 }
