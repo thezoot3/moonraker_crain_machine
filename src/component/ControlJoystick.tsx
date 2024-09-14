@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { IJoystickUpdateEvent } from 'react-joystick-component/build/lib/Joystick'
-import { GCodeSetRelative, GCodeTravel } from '../reqFactory/GCode.ts'
+import { GCodeSetRelative, GCodeTravel } from '../rpc/GCode.ts'
 import { Joystick } from 'react-joystick-component'
-import { MCodeSetAccel } from '../reqFactory/MCode.ts'
+import { MCodeSetAccel } from '../rpc/MCode.ts'
+import { sendRPC } from '../rpc'
 
-const speed = 100
+const speed = 5000
 const accel = 2000
 
 export default function ControlJoystick() {
@@ -21,21 +22,21 @@ export default function ControlJoystick() {
     timerRef.current = setInterval(async () => {
       switch (direction) {
         case 'FORWARD':
-          await sendRPC(GCodeTravel({ y: 20 }, speed))
+          await sendRPC(GCodeTravel({ y: 30 }, speed))
           break
         case 'RIGHT':
-          await sendRPC(GCodeTravel({ x: 20 }, speed))
+          await sendRPC(GCodeTravel({ x: 30 }, speed))
           break
         case 'LEFT':
-          await sendRPC(GCodeTravel({ x: -20 }, speed))
+          await sendRPC(GCodeTravel({ x: -30 }, speed))
           break
         case 'BACKWARD':
-          await sendRPC(GCodeTravel({ y: -20 }, speed))
+          await sendRPC(GCodeTravel({ y: -30 }, speed))
           break
         default:
           break
       }
-    }, 200)
+    }, 100)
   }, [direction])
   useEffect(() => {
     async function init() {
@@ -52,38 +53,4 @@ export default function ControlJoystick() {
       size={256}
     />
   )
-}
-
-export interface RPCRequest {
-  method: string
-  params?: { [key: string]: any }
-  id: number
-  jsonrpc: string
-}
-
-export interface RPCResponse {
-  result: { [key: string]: any } | null
-  error: { [key: string]: any } | null
-  id: number
-  jsonrpc: string
-}
-
-async function sendRPC(req: RPCRequest): Promise<RPCResponse | null> {
-  try {
-    const data = await fetch(`http://localhost:7125/server/jsonrpc`, {
-      method: 'POST',
-      body: JSON.stringify(req),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    const json = await data.json()
-    if (json) {
-      console.log(json)
-      return json as RPCResponse
-    }
-  } catch (e) {
-    console.log(e)
-  }
-  return null
 }

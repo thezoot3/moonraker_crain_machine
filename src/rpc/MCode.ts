@@ -2,7 +2,7 @@ import { RPCRequest } from '../component/ControlJoystick.tsx'
 
 export function MCodeSetAccel(accel: number): RPCRequest {
   return {
-    method: 'server.gcode.script',
+    method: 'printer.gcode.script',
     params: {
       script: `M204 T${accel}`,
     },
